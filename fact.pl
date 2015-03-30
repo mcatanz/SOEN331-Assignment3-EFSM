@@ -29,6 +29,12 @@ state(alt_psi).
 state(risk_assess).
 state(safe_status).
 
+%States in error_diagnosis
+state(error_rcv).
+state(applicable_rescue).
+state(reset_module_data).
+
+
 %Superstates
 superstate(init, boot_hw).
 superstate(init, senchk).
@@ -43,13 +49,16 @@ superstate(lockdown, alt_temp).
 superstate(lockdown, alt_psi).
 superstate(lockdown, risk_assess).
 superstate(lockdown, safe_status).
+superstate(error_diagnosis, error_rcv).
+superstate(error_diagnosis, applicable_rescue).
+superstate(error_diagnosis, reset_module_data).
 
 % Initial states
 initial_state(dormant, null).
 initial_state(boot_hw, init).
 initial_state(monidle, monitoring).
 initial_state(prep_vpurge, lockdown).
-
+initial_state(error_rcv,error_diagnosis).
 
 % Top-level Transitions written in the form transition(Source,
 % Destination, Event, Guard, Action1, Action2)
@@ -65,9 +74,10 @@ transition(idle, monitoring, begin_monitoring, null, null, null).
 transition(init, error_diagnosis, init_crash, null, init_err_msg, null).
 transition(idle, error_diagnosis, idle_crash, null, idle_err_msg, null).
 transition(monitoring, error_diagnosis, monitor_crash, null, moni_err_msg, null).
-transition(error_diagnosis, init, retry_init, retry<3, null, null).
+transition(error_diagnosis, init, retry_init, retry < 3, null, null).
 transition(error_diagnosis, idle, idle_rescue, null, null, null).
 transition(error_diagnosis, monitorings, moni_rescue, null, null, null).
+transition(safe_shutdown, dormant, sleep, null, null, null).
 
 %Transitions in the init state
 transition(boot_hw, senchk, hw_ok, null, null, null).
@@ -78,9 +88,9 @@ transition(psichk, ready, psi_ok, null, null, null).
 %Transitions in the monitoring state
 transition(monidle, regulate_environment, no_contagion, null, null, null).
 transition(regulate_environment, monidle, after_100ms, null, null, null).
-transition(regulate_environment, lockdown, contagion_alert, null, FACILITY_CRIT_MESG, inlockdown = true).
+transition(regulate_environment, lockdown, contagion_alert, null, facility_crit_mesg, inlockdown = true).
 transition(lockdown, monidle, purge_succ, null, lockdown = false, null).
-transition(monitoring, monitoring, null, [lockdown == true], null, null).
+transition(monitoring, monitoring, null, inlockdown == true, null, null).
 
 %Transitions in the lockdown state
 transition(prep_vpurge, alt_temp, initiate_purge, null, lock_doors, null).
@@ -91,4 +101,8 @@ transition(risk_assess, prep_vpurge, null, [risk >= 0.01], null, null).
 transition(risk_assess, safe_status, null, [risk < 0.01], unlock_doors, null).
 transition(safe_status, final, null, null, null, null).
 
-
+%Transitions in the error_diagnosis state
+transition(error_rcv,applicable_rescue,null,[err_protocol_def == true],null,null).
+transition(error_rcv,reset_module_data,null,[err_protocol_def == false],null,null).
+transition(applicable_rescue,final,apply_protocol_rescues,null,null,null).
+transition(reset_module_data,final,reset_to_stable,null,null,null).
