@@ -22,6 +22,13 @@ state(monidle).
 state(regulate_environment).
 state(lockdown).
 
+%States in the lockdown state
+state(prep_vpurge).
+state(alt_temp).
+state(alt_psi).
+state(risk_assess).
+state(safe_status).
+
 %Superstates
 superstate(init, boot_hw).
 superstate(init, senchk).
@@ -31,14 +38,21 @@ superstate(init, ready).
 superstate(monitoring, monidle).
 superstate(monitoring, regulate_environment).
 superstate(monitoring, lockdown).
+superstate(lockdown, prep_vpurge).
+superstate(lockdown, alt_temp).
+superstate(lockdown, alt_psi).
+superstate(lockdown, risk_assess).
+superstate(lockdown, safe_status).
 
 % Initial states
 initial_state(dormant, null).
 initial_state(boot_hw, init).
 initial_state(monidle, monitoring).
+initial_state(prep_vpurge, lockdown).
 
-% Top-level Transitions written in the form
-%transition(Source,Destination, Event, Guard, Action1, Action2)
+
+% Top-level Transitions written in the form transition(Source,
+% Destination, Event, Guard, Action1, Action2)
 transition(idle , final, kill, null, null, null).
 transition(init , final, kill, null, null, null).
 transition(dormant ,final, kill, null, null, null).
@@ -64,8 +78,17 @@ transition(psichk, ready, psi_ok, null, null, null).
 %Transitions in the monitoring state
 transition(monidle, regulate_environment, no_contagion, null, null, null).
 transition(regulate_environment, monidle, after_100ms, null, null, null).
-transition(regulate_environment, lockdown, contagion_alert, null, facility_crit_mesg, inlockdown = true).
+transition(regulate_environment, lockdown, contagion_alert, null, FACILITY_CRIT_MESG, inlockdown = true).
 transition(lockdown, monidle, purge_succ, null, lockdown = false, null).
 transition(monitoring, monitoring, null, [lockdown == true], null, null).
+
+%Transitions in the lockdown state
+transition(prep_vpurge, alt_temp, initiate_purge, null, lock_doors, null).
+transition(prep_vpurge, alt_psi, initiate_purge, null, lock_doors, null).
+transition(alt_temp, risk_assess, tcyc_comp, null, null, null).
+transition(alt_psi, risk_assess, psicyc_comp, null, null, null).
+transition(risk_assess, prep_vpurge, null, [risk >= 0.01], null, null).
+transition(risk_assess, safe_status, null, [risk < 0.01], unlock_doors, null).
+transition(safe_status, final, null, null, null, null).
 
 
