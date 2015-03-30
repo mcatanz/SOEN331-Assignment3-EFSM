@@ -71,10 +71,11 @@ transition(error_diagnosis, final, kill, null, null, null).
 transition(dormant, init, start, null, null, null).
 transition(init, idle, init_ok, null, null, null).
 transition(idle, monitoring, begin_monitoring, null, null, null).
-transition(init, error_diagnosis, init_crash, null, init_err_msg, null).
-transition(idle, error_diagnosis, idle_crash, null, idle_err_msg, null).
-transition(monitoring, error_diagnosis, monitor_crash, null, moni_err_msg, null).
-transition(error_diagnosis, init, retry_init, retry < 3, null, null).
+transition(init, error_diagnosis, init_crash, null, 'init_err_msg', null).
+transition(idle, error_diagnosis, idle_crash, null, 'idle_err_msg', null).
+transition(monitoring, error_diagnosis, monitor_crash, null, 'moni_err_msg', null).
+transition(error_diagnosis, init, retry_init, 'retry <= 3', 'retry++', null).
+transition(error_diagnosis, safe_shutdown, retry_init, 'retry > 3', null, null).
 transition(error_diagnosis, idle, idle_rescue, null, null, null).
 transition(error_diagnosis, monitorings, moni_rescue, null, null, null).
 transition(safe_shutdown, dormant, sleep, null, null, null).
@@ -88,21 +89,21 @@ transition(psichk, ready, psi_ok, null, null, null).
 %Transitions in the monitoring state
 transition(monidle, regulate_environment, no_contagion, null, null, null).
 transition(regulate_environment, monidle, after_100ms, null, null, null).
-transition(regulate_environment, lockdown, contagion_alert, null, facility_crit_mesg, inlockdown = true).
-transition(lockdown, monidle, purge_succ, null, lockdown = false, null).
-transition(monitoring, monitoring, null, inlockdown == true, null, null).
+transition(regulate_environment, lockdown, contagion_alert, null, 'facility_crit_mesg', 'inlockdown = true').
+transition(lockdown, monidle, purge_succ, null, 'lockdown = false', null).
+transition(monitoring, monitoring, null,'inlockdown == true', null, null).
 
 %Transitions in the lockdown state
-transition(prep_vpurge, alt_temp, initiate_purge, null, lock_doors, null).
-transition(prep_vpurge, alt_psi, initiate_purge, null, lock_doors, null).
+transition(prep_vpurge, alt_temp, initiate_purge, null, 'lock_doors', null).
+transition(prep_vpurge, alt_psi, initiate_purge, null, 'lock_doors', null).
 transition(alt_temp, risk_assess, tcyc_comp, null, null, null).
 transition(alt_psi, risk_assess, psicyc_comp, null, null, null).
-transition(risk_assess, prep_vpurge, null, [risk >= 0.01], null, null).
-transition(risk_assess, safe_status, null, [risk < 0.01], unlock_doors, null).
+transition(risk_assess, prep_vpurge, null, 'risk >= 0.01', null, null).
+transition(risk_assess, safe_status, null, 'risk < 0.01', 'unlock_doors', null).
 transition(safe_status, final, null, null, null, null).
 
 %Transitions in the error_diagnosis state
-transition(error_rcv,applicable_rescue,null,[err_protocol_def == true],null,null).
-transition(error_rcv,reset_module_data,null,[err_protocol_def == false],null,null).
-transition(applicable_rescue,final,apply_protocol_rescues,null,null,null).
-transition(reset_module_data,final,reset_to_stable,null,null,null).
+transition(error_rcv, applicable_rescue, null, 'err_protocol_def == true',null,null).
+transition(error_rcv, reset_module_data, null, 'err_protocol_def == false',null,null).
+transition(applicable_rescue, final,apply_protocol_rescues, null, null, null).
+transition(reset_module_data, final, reset_to_stable, null, null, null).

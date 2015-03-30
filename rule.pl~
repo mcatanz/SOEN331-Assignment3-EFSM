@@ -78,3 +78,4 @@ get_only_guarded(Ret) :-
 
 legal_events_of(State, L) :-
 	findall(Event-Guard,transition(State,_,Event,Guard,_,_),L).
+
